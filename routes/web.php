@@ -100,13 +100,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/settings/otp', [SettingController::class, 'updateOtpSettings'])->name('admin.settings.otp.update');
     });
 
-    Route::middleware(['can:project.create'])->group(function () {
-        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project');
-    });
-
-    Route::middleware(['can:project.store'])->group(function () {
-        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project');
-        Route::post('projects/store', [HomeController::class, 'store'])->name('projects.store');
+    // Consolidated project create/store routes to avoid name collisions
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project')->middleware('can:project.create');
+        Route::post('projects/store', [HomeController::class, 'store'])->name('projects.store')->middleware('can:project.store');
     });
 
     Route::middleware(['can:project.edit'])->group(function () {
@@ -169,7 +166,6 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::get('/Distribution/Tracking', [HomeController::class, 'Distribution_Tracking'])->name('distribution.tracking');
     Route::middleware(['can:master'])->group(function () {
-        Route::get('/project/report', [HomeController::class, 'project_report'])->name('project.report');
         Route::get('/project-report', [HomeController::class, 'project_report'])->name('project.report');
         Route::get('/tree/report', [HomeController::class, 'tree_report'])->name('tree.report');
 
