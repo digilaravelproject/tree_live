@@ -30,6 +30,7 @@ class SettingController extends Controller
             'sms_provider' => 'required|in:2factor,vilpower',
             'two_factor_api_key' => 'nullable|string',
             'two_factor_template' => 'nullable|string',
+            'two_factor_method' => 'required|in:SMS,VOICE',
             'vilpower_api_key' => 'nullable|string',
             'vilpower_sender_id' => 'nullable|string',
             'vilpower_template_id' => 'nullable|string',
