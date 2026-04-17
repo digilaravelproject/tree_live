@@ -140,7 +140,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/tree/store/data', [HomeController::class, 'storetree_data'])->name('trees.store');
         Route::get('/add-multiple', [MapController::class, 'mapGenerator'])->name('tree.add.data.multiple');
 
-        Route::get('/List/tree', [HomeController::class, 'tree_list'])->name('tree.list');
         Route::get('/edit/tree/{id}', [HomeController::class, 'edit_tree'])->name('trees.edit');
         Route::put('/trees/update/{tree_id}', [HomeController::class, 'update_tree'])->name('trees.update');
         Route::get('/add-tree/name', [HomeController::class, 'add_tree_name'])->name('tree.name.add');
