@@ -73,16 +73,25 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">API Key</label>
                                         <input type="text" name="two_factor_api_key" class="form-control" value="{{ $settings['two_factor_api_key'] ?? '' }}" placeholder="Enter 2Factor API Key">
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Template Name (DLT)</label>
                                         <input type="text" name="two_factor_template" class="form-control" value="{{ $settings['two_factor_template'] ?? '' }}" placeholder="Enter Template Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">OTP Method</label>
+                                        <select name="two_factor_method" class="form-select">
+                                            <option value="SMS" {{ ($settings['two_factor_method'] ?? 'SMS') == 'SMS' ? 'selected' : '' }}>SMS (Text Message)</option>
+                                            <option value="VOICE" {{ ($settings['two_factor_method'] ?? '') == 'VOICE' ? 'selected' : '' }}>VOICE (Call)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
