@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Setting;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Exception;
+
+class OtpService
+{
+    /**
+     * Send OTP to a mobile number using configured SMS provider.
+     *
+     * @param string $phone
+     * @param string $otp
+     * @return array
+     */
+    public function sendOtp(string $phone, string $otp): array
+    {
+        $provider = Setting::get('sms_provider', '2factor');
+        
+        try {
+            switch ($provider) {
+                case '2factor':
+                    return $this->sendVia2Factor($phone, $otp);
+                case 'vilpower':
+                    return $this->sendViaVilpower($phone, $otp);
+                default:
+                    throw new Exception("Unsupported SMS provider: {$provider}");
+            }
+        } catch (Exception $e) {
+            Log::error("OTP Service Error ({$provider}): " . $e->getMessage());
+            
+            return [
+                'status' => 'error',
+                'message' => 'Failed to send OTP. Please try again later.',
+                'debug' => config('app.debug') ? $e->getMessage() : null
+            ];
+        }
+    }
+
+    /**
+     * Send OTP via 2factor.in
+     * 
+     * @param string $phone
+     * @param string $otp
+     * @return array
+     * @throws Exception
+     */
+    private function sendVia2Factor(string $phone, string $otp): array
+    {
+        $apiKey = Setting::get('two_factor_api_key');
+        $template = Setting::get('two_factor_template');
+
+        if (empty($apiKey)) {
+            throw new Exception("2Factor API Key is not configured in settings.");
+        }
+
+        // Format: https://2factor.in/API/V1/{api_key}/SMS/{phone}/{otp}/{template_name}
+        $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}";
+        if ($template) {
+            $url .= "/{$template}";
+        }
+        
+        $response = Http::get($url);
+
+        if ($response->successful()) {
+            return [
+                'status' => 'success',
+                'message' => 'OTP sent successfully.',
+                'data' => $response->json()
+            ];
+        }
+
+        throw new Exception("2Factor API returned error: " . $response->body());
+    }
+
+    /**
+     * Send OTP via vilpower.in (Vi DLT)
+     * 
+     * @param string $phone
+     * @param string $otp
+     * @return array
+     * @throws Exception
+     */
+    private function sendViaVilpower(string $phone, string $otp): array
+    {
+        $apiKey = Setting::get('vilpower_api_key');
+        $senderId = Setting::get('vilpower_sender_id');
+        $templateId = Setting::get('vilpower_template_id');
+        $entityId = Setting::get('vilpower_entity_id');
+
+        if (empty($apiKey)) {
+            throw new Exception("Vilpower API Key is not configured in settings.");
+        }
+
+        $url = "http://sms.vilpower.in/api/v2/sms/send";
+
+        $response = Http::post($url, [
+            'apiKey' => $apiKey,
+            'senderId' => $senderId,
+            'mobileNo' => $phone,
+            'message' => "Your OTP is {$otp}", // Ensure this matches DLT template exactly
+            'templateId' => $templateId,
+            'entityId' => $entityId,
+        ]);
+
+        if ($response->successful()) {
+            return [
+                'status' => 'success',
+                'message' => 'OTP sent successfully.',
+                'data' => $response->json()
+            ];
+        }
+
+        throw new Exception("Vilpower API returned error: " . $response->body());
+    }
+}

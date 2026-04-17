@@ -48,6 +48,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
     ];
     /**
      * Check if user is a Customer (Role 3)

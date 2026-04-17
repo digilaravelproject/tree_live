@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\ContactController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\TreePriceController;
+use App\Http\Controllers\SettingController;
 
 Route::get('/generate-hash', function () {
     $password = 'vedantgamechanger18';
@@ -33,7 +35,10 @@ Route::get('/linkstorage', function () {
 });
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.store');;
+Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+Route::get('/login/otp-verify', [AuthController::class, 'showOtpVerify'])->name('login.otp.verify');
+Route::post('/login/otp-verify', [AuthController::class, 'verifyOtp'])->name('login.otp.verify.store');
+Route::post('/login/otp-resend', [AuthController::class, 'resendOtp'])->name('login.otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
@@ -89,6 +94,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/projects/{id}/settings', [HomeController::class, 'settings'])->name('projects.settings');
         Route::post('/projects/{id}/settings', [HomeController::class, 'updateSettings'])->name('projects.updateSettings');
         Route::get('/projects/{id}/view-settings', [HomeController::class, 'viewSettings'])->name('projects.viewSettings');
+
+        // OTP & SMS Settings
+        Route::get('/settings/otp', [SettingController::class, 'otpSettings'])->name('admin.settings.otp');
+        Route::post('/settings/otp', [SettingController::class, 'updateOtpSettings'])->name('admin.settings.otp.update');
     });
 
     Route::middleware(['can:project.create'])->group(function () {
