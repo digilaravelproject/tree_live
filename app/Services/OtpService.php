@@ -43,6 +43,8 @@ class OtpService
     /**
      * Send OTP via 2factor.in
      * 
+     * Handles both Default AUTOGEN flow and Custom DLT Template flow.
+     * 
      * @param string $phone
      * @param string $otp
      * @return array
@@ -52,15 +54,32 @@ class OtpService
     {
         $apiKey = Setting::get('two_factor_api_key');
         $template = Setting::get('two_factor_template');
+        $method = Setting::get('two_factor_method', 'SMS'); // New Setting: SMS or VOICE
 
         if (empty($apiKey)) {
             throw new Exception("2Factor API Key is not configured in settings.");
         }
 
-        // Format: https://2factor.in/API/V1/{api_key}/SMS/{phone}/{otp}/{template_name}
-        $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}";
-        if ($template) {
-            $url .= "/{$template}";
+        $templateUpper = strtoupper(trim($template ?? ''));
+        $methodUpper = strtoupper(trim($method ?? 'SMS'));
+
+        /**
+         * 2FACTOR METHOD SELECTION:
+         * 1. VOICE: Explicitly triggers a voice call with the OTP.
+         * 2. SMS: Standard SMS delivery.
+         */
+        if ($methodUpper === 'VOICE') {
+            // Voice OTP URL
+            $url = "https://2factor.in/API/V1/{$apiKey}/VOICE/{$phone}/{$otp}";
+        } else {
+            // SMS OTP URL
+            if (empty($templateUpper) || $templateUpper === 'AUTOGEN') {
+                // Scenario A: Default Transactional SMS (uses system $otp)
+                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}";
+            } else {
+                // Scenario B: Custom DLT Template (Scenario B)
+                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}/{$template}";
+            }
         }
         
         $response = Http::get($url);
@@ -68,7 +87,7 @@ class OtpService
         if ($response->successful()) {
             return [
                 'status' => 'success',
-                'message' => 'OTP sent successfully.',
+                'message' => 'OTP sent successfully (' . $methodUpper . ').',
                 'data' => $response->json()
             ];
         }
