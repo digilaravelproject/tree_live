@@ -5624,6 +5624,7 @@ namespace App\Models {
     /**
      * App\Models\User
      *
+     * @property string|null $profile_image
      * @property \Illuminate\Support\Carbon|null $updated_at
      * @property \Illuminate\Support\Carbon|null $created_at
      * @property string|null $remember_token
@@ -5645,7 +5646,6 @@ namespace App\Models {
      * @property string|null $email
      * @property string|null $name
      * @property int $id
-     * @property-read mixed $profile_image
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Project> $customerProjects
      * @property-read int|null $customer_projects_count
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MtTree> $customerTrees
@@ -5682,6 +5682,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User whereRememberToken($value)
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User whereCreatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User whereUpdatedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<User>|User whereProfileImage($value)
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User query()

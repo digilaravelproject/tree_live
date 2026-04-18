@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
@@ -94,6 +95,20 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Legacy support: return profile_image as URL if it's accessed via JSON
+     */
+    public function toArray()
+    {
+        $array = parent::toArray();
+        if (isset($array['profile_image']) && $array['profile_image']) {
+            if (!filter_var($array['profile_image'], FILTER_VALIDATE_URL)) {
+                $array['profile_image'] = asset('storage/' . $array['profile_image']);
+            }
+        }
+        return $array;
+    }
+
     public function district()
     {
         return $this->belongsTo(District::class, 'district_id');
@@ -102,17 +117,5 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'model_has_roles', 'model_id', 'role_id');
-    }
-
-    /**
-     * Accessor for profile_image to return full URL (Legacy Support)
-     */
-    public function getProfileImageAttribute($value)
-    {
-        if (!$value) return null;
-        // If it's already a URL, return as is
-        if (filter_var($value, FILTER_VALIDATE_URL)) return $value;
-        // Otherwise prefix with storage path
-        return asset('storage/' . $value);
     }
 }

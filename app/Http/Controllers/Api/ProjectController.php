@@ -5,16 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectSetting;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Exception;
 
 class ProjectController extends Controller
 {
-    use ApiResponse;
-
     /**
      * Project List for Authenticated Staff
      */
@@ -30,8 +28,6 @@ class ProjectController extends Controller
             if ($user->role_id == 3) {
                 $query->where('extra_user', $user->id);
             } elseif ($user->role_id == 2) {
-                // Assuming field_officer_id is stored as JSON or string of comma separated IDs
-                // Old logic used JSON_CONTAINS
                 $query->whereRaw("JSON_CONTAINS(field_officer_id, '\"$user->id\"')");
             }
             
@@ -41,14 +37,18 @@ class ProjectController extends Controller
             $activePrice = \App\Models\TreePrice::where('is_active', 1)->orderBy('id', 'desc')->first();
             $priceStr = $activePrice ? number_format((float)$activePrice->price, 2, '.', '') : "0.00";
 
-            return $this->success([
+            return response()->json([
+                'status' => true,
                 'active_tree_price' => $priceStr,
                 'count' => $projects->count(),
                 'data' => $projects
-            ], 'Projects fetched successfully.');
+            ]);
         } catch (Exception $e) {
             Log::error("Project List Error: " . $e->getMessage());
-            return $this->error('Failed to fetch projects.', 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch projects.'
+            ], 500);
         }
     }
 
@@ -58,10 +58,14 @@ class ProjectController extends Controller
      */
     public function requirements(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'role_id' => 'required|integer',
             'project_id' => 'required|integer|exists:projects,id',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+        }
 
         try {
             $role_id = $request->role_id;
@@ -106,12 +110,13 @@ class ProjectController extends Controller
                 $requirements['tree_images']['is_required'] = true;
             }
 
-            return $this->success([
+            return response()->json([
+                'status' => true,
                 'ward_no' => $project->ward_no ?? "",
                 'requirements' => $requirements
             ]);
         } catch (Exception $e) {
-            return $this->error('Failed to fetch requirements.', 500);
+            return response()->json(['status' => false, 'message' => 'Failed to fetch requirements.'], 500);
         }
     }
 }

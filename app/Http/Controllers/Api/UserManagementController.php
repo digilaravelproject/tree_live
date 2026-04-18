@@ -5,16 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ProfileUpdateRequest;
 use App\Models\User;
-use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Exception;
 
 class UserManagementController extends Controller
 {
-    use ApiResponse;
-
     /**
      * Get User Details
      */
@@ -23,14 +22,15 @@ class UserManagementController extends Controller
         $user = User::with(['district', 'roles'])->find($id);
 
         if (!$user) {
-            return $this->error('User not found', 404);
+            return response()->json(['status' => false, 'message' => 'User not found'], 404);
         }
 
-        if ($user->profile_image) {
-            $user->profile_image = asset('storage/' . $user->profile_image);
-        }
+        // profile_image URL is now handled by User model toArray()
 
-        return $this->success($user, 'User details fetched successfully.');
+        return response()->json([
+            'status' => true,
+            'data' => $user
+        ]);
     }
 
     /**
@@ -48,7 +48,11 @@ class UserManagementController extends Controller
             // Handle Profile Image
             if ($request->hasFile('profile_image')) {
                 if ($user->profile_image) {
-                    Storage::disk('public')->delete($user->profile_image);
+                    // Original path for deletion - toArray doesn't affect raw attributes if accessed correctly
+                    $rawPath = $user->getRawOriginal('profile_image');
+                    if ($rawPath) {
+                        Storage::disk('public')->delete($rawPath);
+                    }
                 }
 
                 $filename = 'profile_' . Str::random(10) . '.' . $request->file('profile_image')->getClientOriginalExtension();
@@ -58,12 +62,14 @@ class UserManagementController extends Controller
             $user->is_verified = 1;
             $user->save();
 
-            $user->image_url = $user->profile_image ? asset('storage/' . $user->profile_image) : null;
-
-            return $this->success($user, 'Profile updated successfully.');
+            return response()->json([
+                'status' => true,
+                'message' => 'Profile updated successfully.',
+                'data' => $user
+            ]);
         } catch (Exception $e) {
             Log::error("Profile Update Error: " . $e->getMessage());
-            return $this->error('Update failed.', 500);
+            return response()->json(['status' => false, 'message' => 'Update failed.'], 500);
         }
     }
 }
