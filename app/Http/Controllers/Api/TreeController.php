@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\ProcessImageUpload; 
 use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 
 class TreeController extends Controller
@@ -413,12 +415,17 @@ public function store(Request $request)
 
                     try {
                         // ✅ Compress & Resize — size reduce hoga
-                        Image::make($imageData)
-                            ->resize(800, null, function ($constraint) {
-                                $constraint->aspectRatio(); // Ratio same rahega
-                                $constraint->upsize();      // Chhoti image aur chhoti nahi hogi
-                            })
-                            ->save($destinationPath . '/' . $fileName, 60); // 60% quality
+                        // Image::make($imageData)
+                        //     ->resize(800, null, function ($constraint) {
+                        //         $constraint->aspectRatio(); // Ratio same rahega
+                        //         $constraint->upsize();      // Chhoti image aur chhoti nahi hogi
+                        //     })
+                        //     ->save($destinationPath . '/' . $fileName, 60); // 60% quality
+                            
+                            $manager = new ImageManager(new Driver());
+                            $image = $manager->read($imageData);
+                            $image->resize(800, null);
+                            $image->save($destinationPath . '/' . $fileName, quality: 60);
                             
                         // echo'<pre>';print_r($imageData);die;
 

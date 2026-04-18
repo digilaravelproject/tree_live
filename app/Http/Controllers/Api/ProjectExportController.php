@@ -471,6 +471,13 @@ public function downloadKml(Request $request, $project_id)
     $icon->appendChild($href);
     $iconStyle->appendChild($icon);
     $style->appendChild($iconStyle);
+    
+    // ✅ Hide label on icon but keep name in list display
+    $labelStyle = $dom->createElement('LabelStyle');
+    $labelScale = $dom->createElement('scale', '0');
+    $labelStyle->appendChild($labelScale);
+    $style->appendChild($labelStyle);
+    
     $document->appendChild($style);
 
     // Schema
@@ -511,6 +518,7 @@ public function downloadKml(Request $request, $project_id)
 
         $placemark = $dom->createElement('Placemark');
 
+        // ✅ Name for list display in details panel (shows tree number and name in the list below)
         $pmName = $dom->createElement('name', $tree->tree_no . ' - ' . $tName);
         $placemark->appendChild($pmName);
 
