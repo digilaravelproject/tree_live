@@ -9,6 +9,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Models\MtTree;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProcessImageUpload implements ShouldQueue
 {
@@ -17,8 +19,8 @@ class ProcessImageUpload implements ShouldQueue
     protected $treeId;
     protected $imagesInput;
 
-    public $tries = 3;        // ✅ 3 baar try karega fail hone par
-    public $timeout = 120;    // ✅ 120 seconds max time per job
+    public $tries = 3;
+    public $timeout = 120;
 
     public function __construct($treeId, $imagesInput)
     {
@@ -35,46 +37,43 @@ class ProcessImageUpload implements ShouldQueue
             mkdir($destinationPath, 0775, true);
         }
 
+        $manager = new ImageManager(new Driver());
+
         foreach ((array)$this->imagesInput as $base64Image) {
-            if (!empty($base64Image)) {
+            if (empty($base64Image)) continue;
 
-                // ✅ Remove data:image/... prefix if exists
-                if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                    $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-                }
+            // Remove data:image/... prefix if exists
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Image)) {
+                $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
+            }
 
-                $imageData = base64_decode($base64Image);
+            $imageData = base64_decode($base64Image);
 
-                if ($imageData !== false) {
-                    $fileName = 'tree_' . time() . '_' . uniqid() . '.jpg';
+            if ($imageData !== false) {
+                $fileName = 'tree_' . time() . '_' . uniqid() . '.jpg';
 
-                    // ✅ Compress & Resize using Intervention/Image
-                    \Intervention\Image\Facades\Image::make($imageData)
-                        ->resize(1024, null, function ($constraint) {
-                            $constraint->aspectRatio();
-                            $constraint->upsize();
-                        })
-                        ->save($destinationPath . '/' . $fileName, 75);
+                try {
+                    $image = $manager->read($imageData);
+                    $image->scale(width: 1024);
+                    $image->toJpeg(75)->save($destinationPath . '/' . $fileName);
 
                     $savedImagesPaths[] = 'tree_images/' . $fileName;
+                } catch (\Exception $e) {
+                    Log::error("Async Image Save Error for Tree {$this->treeId}: " . $e->getMessage());
                 }
             }
         }
 
-        // ✅ Tree record update karo processed images ke saath
         if (!empty($savedImagesPaths)) {
-            $finalJsonPath = json_encode($savedImagesPaths);
-
             MtTree::where('id', $this->treeId)->update([
-                'tree_image_upload'   => $finalJsonPath,
-                'all_captured_images' => $finalJsonPath,
+                'tree_image_upload'   => $savedImagesPaths,
+                'all_captured_images' => $savedImagesPaths,
             ]);
 
             Log::info("✅ Images processed for Tree ID: {$this->treeId} | Count: " . count($savedImagesPaths));
         }
     }
 
-    // ✅ Job fail hone par log karega
     public function failed(\Throwable $exception)
     {
         Log::error("❌ Image processing failed for Tree ID: {$this->treeId} | Error: " . $exception->getMessage());

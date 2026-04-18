@@ -10,7 +10,7 @@
         <nav>
             <div class="app-logo d-flex align-items-center ps-3 py-3">
     <a class="logo d-none d-md-flex align-items-center text-decoration-none" href="{{ route('home') }}">
-        <div class="overflow-hidden rounded-circle border border-2 border-success d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+        <div class="overflow-hidden rounded-circle border-2 border-success d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
             <img src="{{ asset('assets/images/logo/1.png') }}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
         <span class="ms-2 fw-bold text-dark fs-5">Tree Expert</span>
@@ -145,6 +145,21 @@
                                         <a href="{{ route('user.list') }}">User List</a>
                                     </li>
                                 @endcan
+                            </ul>
+                        </li>
+                    @endcan
+
+                    @can('master')
+                        <li class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                            <a class="" data-bs-toggle="collapse" href="#Settings" aria-expanded="false">
+                                <i class="ph-duotone ph-gear"></i>
+                                Settings
+                                <span class="badge badge-notification ms-2" style="background-color: #7cb342; color: white;">1</span>
+                            </a>
+                            <ul class="collapse" id="Settings">
+                                <li class="{{ request()->routeIs('admin.settings.otp') ? 'active' : '' }}">
+                                    <a href="{{ route('admin.settings.otp') }}">OTP Settings</a>
+                                </li>
                             </ul>
                         </li>
                     @endcan

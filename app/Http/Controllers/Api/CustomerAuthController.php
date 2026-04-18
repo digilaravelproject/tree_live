@@ -3,13 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\OtpService;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class CustomerAuthController extends Controller
 {
-    // Send OTP
+    protected $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
+
+    /**
+     * Send OTP to Customer
+     */
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -17,72 +29,97 @@ class CustomerAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
         }
 
-        // Create User with Role 3 if not exists
-        $user = User::firstOrCreate(
-            ['phone' => $request->phone],
-            [
-                'role_id' => 3,
-                'status' => 'inactive'
-            ]
-        );
+        try {
+            $phone = $request->phone;
+            $otp = (string) rand(1000, 9999);
 
-        // SMS Gateway Code yahan aayega
-        $otp = 1234; // Demo
+            // Send via Service
+            $this->otpService->sendOtp($phone, $otp);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'OTP sent successfully',
-            'action' => 'redirect_to_verify'
-        ]);
+            // Create or update user
+            $user = User::updateOrCreate(
+                ['phone' => $phone],
+                [
+                    'role_id' => 3, // Customer
+                    'otp' => $otp,
+                    'status' => 'inactive',
+                ]
+            );
+
+            return response()->json([
+                'status' => true,
+                'message' => 'OTP sent successfully',
+                'action' => 'redirect_to_verify',
+                'otp' => config('app.debug') ? $otp : null, // Only for debug
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong while sending OTP.',
+            ], 500);
+        }
     }
 
-    // Verify OTP
+    /**
+     * Verify OTP and Login
+     */
     public function verifyOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => 'required',
-            'otp' => 'required'
+            'phone' => 'required|numeric|digits:10',
+            'otp' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
         }
 
-        if ($request->otp == 1234) {
-            $user = User::where('phone', $request->phone)->first();
+        $user = User::where('phone', $request->phone)->first();
 
-            if (!$user) return response()->json(['status' => false, 'message' => 'User not found'], 404);
+        if (! $user) {
+            return response()->json(['status' => false, 'message' => 'User not found'], 404);
+        }
 
+        if ($user->otp === $request->otp) {
             $user->status = 'active';
+            $user->otp = null;
             $user->save();
 
             $token = $user->createToken('CustomerApp')->plainTextToken;
-
-            // Check if Profile (Name/Email) is incomplete
-            $isProfileIncomplete = empty($user->name) || empty($user->email);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Login successful',
                 'token' => $token,
-                'action' => $isProfileIncomplete ? 'redirect_to_profile_update' : 'redirect_to_dashboard'
+                'action' => (empty($user->name) || empty($user->email)) ? 'redirect_to_profile_update' : 'redirect_to_dashboard',
             ]);
         }
 
         return response()->json(['status' => false, 'message' => 'Invalid OTP'], 401);
     }
 
-    // Update Profile
+    /**
+     * Update Profile
+     */
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated'], 401);
+        }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'address' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -95,6 +132,10 @@ class CustomerAuthController extends Controller
             'address' => $request->address ?? $user->address,
         ]);
 
-        return response()->json(['status' => true, 'message' => 'Profile Updated', 'action' => 'redirect_to_dashboard']);
+        return response()->json([
+            'status' => true,
+            'message' => 'Profile Updated',
+            'action' => 'redirect_to_dashboard',
+        ]);
     }
 }

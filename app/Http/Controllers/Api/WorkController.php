@@ -71,12 +71,6 @@ class WorkController extends Controller
         }
     }
 
-    public function tree_list_old()
-    {
-        $trees = Tree::all(['id', 'name']);
-        return response()->json($trees);
-    }
-
     public function tree_list()
     {
         $trees = Tree::leftJoin('scientific_names', 'trees.id', '=', 'scientific_names.tree_id')

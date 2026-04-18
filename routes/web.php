@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\ContactController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\TreePriceController;
+use App\Http\Controllers\SettingController;
 
 Route::get('/generate-hash', function () {
     $password = 'vedantgamechanger18';
@@ -33,7 +35,10 @@ Route::get('/linkstorage', function () {
 });
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.store');;
+Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+Route::get('/login/otp-verify', [AuthController::class, 'showOtpVerify'])->name('login.otp.verify');
+Route::post('/login/otp-verify', [AuthController::class, 'verifyOtp'])->name('login.otp.verify.store');
+Route::post('/login/otp-resend', [AuthController::class, 'resendOtp'])->name('login.otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
@@ -89,15 +94,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/projects/{id}/settings', [HomeController::class, 'settings'])->name('projects.settings');
         Route::post('/projects/{id}/settings', [HomeController::class, 'updateSettings'])->name('projects.updateSettings');
         Route::get('/projects/{id}/view-settings', [HomeController::class, 'viewSettings'])->name('projects.viewSettings');
+
+        // OTP & SMS Settings
+        Route::get('/settings/otp', [SettingController::class, 'otpSettings'])->name('admin.settings.otp');
+        Route::post('/settings/otp', [SettingController::class, 'updateOtpSettings'])->name('admin.settings.otp.update');
     });
 
-    Route::middleware(['can:project.create'])->group(function () {
-        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project');
-    });
-
-    Route::middleware(['can:project.store'])->group(function () {
-        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project');
-        Route::post('projects/store', [HomeController::class, 'store'])->name('projects.store');
+    // Consolidated project create/store routes to avoid name collisions
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/add/project', [HomeController::class, 'add_project'])->name('add.project')->middleware('can:project.create');
+        Route::post('projects/store', [HomeController::class, 'store'])->name('projects.store')->middleware('can:project.store');
     });
 
     Route::middleware(['can:project.edit'])->group(function () {
@@ -131,7 +137,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/tree/store/data', [HomeController::class, 'storetree_data'])->name('trees.store');
         Route::get('/add-multiple', [MapController::class, 'mapGenerator'])->name('tree.add.data.multiple');
 
-        Route::get('/List/tree', [HomeController::class, 'tree_list'])->name('tree.list');
         Route::get('/edit/tree/{id}', [HomeController::class, 'edit_tree'])->name('trees.edit');
         Route::put('/trees/update/{tree_id}', [HomeController::class, 'update_tree'])->name('trees.update');
         Route::get('/add-tree/name', [HomeController::class, 'add_tree_name'])->name('tree.name.add');
@@ -161,7 +166,6 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::get('/Distribution/Tracking', [HomeController::class, 'Distribution_Tracking'])->name('distribution.tracking');
     Route::middleware(['can:master'])->group(function () {
-        Route::get('/project/report', [HomeController::class, 'project_report'])->name('project.report');
         Route::get('/project-report', [HomeController::class, 'project_report'])->name('project.report');
         Route::get('/tree/report', [HomeController::class, 'tree_report'])->name('tree.report');
 
