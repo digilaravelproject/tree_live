@@ -5,28 +5,34 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RatingRequest;
 use App\Models\UserRating;
-use App\Traits\ApiResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class UserRatingController extends Controller
 {
-    use ApiResponse;
-
     /**
      * Submit/Update Rating
      */
     public function store(RatingRequest $request)
     {
         try {
+            // Reverted to original logic (user_id as unique key) since rater_id column doesn't exist
             $rating = UserRating::updateOrCreate(
-                ['user_id' => $request->user_id, 'rater_id' => Auth::id()],
+                ['user_id' => $request->user_id],
                 ['rating' => $request->rating, 'comment' => $request->comment]
             );
 
-            return $this->success($rating, 'Rating submitted successfully.');
+            return response()->json([
+                'status' => true,
+                'message' => 'Rating updated successfully',
+                'data' => $rating
+            ]);
         } catch (Exception $e) {
-            return $this->error('Failed to submit rating.', 500);
+            Log::error('Rating Submission Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to submit rating.'
+            ], 500);
         }
     }
 }
