@@ -133,14 +133,14 @@ class ProjectExportController extends Controller
             $query->whereIn('id', explode(',', $request->tree_ids));
         }
 
-        $trees = $query->get()->sortBy(fn($t) => (int) preg_replace('/[^0-9]/', '', $t->tree_no))->values();
+        $trees = $query->get()->sortBy(fn ($t) => (int) preg_replace('/[^0-9]/', '', $t->tree_no))->values();
         if ($trees->isEmpty()) {
             return response()->json(['message' => 'No trees found.'], 404);
         }
 
         $projectBy = User::find($project->extra_user)?->name ?? '-';
         $address = $trees->first()->address ?? '-';
-        $location = ($trees->first()->latitude ?? '') . ', ' . ($trees->first()->longitude ?? '');
+        $location = ($trees->first()->latitude ?? '').', '.($trees->first()->longitude ?? '');
 
         return Pdf::loadView('exports.project_trees_pdf', compact('project', 'trees', 'projectBy', 'address', 'location'))
             ->download("Project_{$project_id}_Trees.pdf");
@@ -167,7 +167,7 @@ class ProjectExportController extends Controller
             $query->whereIn('id', explode(',', $request->tree_ids));
         }
 
-        $trees = $query->get()->sortBy(fn($t) => (int) preg_replace('/[^0-9]/', '', $t->tree_no))->values();
+        $trees = $query->get()->sortBy(fn ($t) => (int) preg_replace('/[^0-9]/', '', $t->tree_no))->values();
         if ($trees->isEmpty()) {
             return response()->json(['message' => 'No trees found.'], 404);
         }
@@ -182,44 +182,44 @@ class ProjectExportController extends Controller
         // Style
         $style = $dom->createElement('Style');
         $style->setAttribute('id', 'tree_icon_style');
-        
+
         // ✅ Hide label on icon but keep name in list display
         $labelStyle = $dom->createElement('LabelStyle');
         $labelScale = $dom->createElement('scale', '0');
         $labelStyle->appendChild($labelScale);
         $style->appendChild($labelStyle);
-        
+
         $document->appendChild($style);
-            $iconStyle = $style->appendChild($dom->createElement('IconStyle'));
-            $iconStyle->appendChild($dom->createElement('scale', '1.1'));
-            $iconStyle->appendChild($dom->createElement('Icon'))->appendChild($dom->createElement('href', 'http://maps.google.com/mapfiles/kml/pal2/icon4.png'));
+        $iconStyle = $style->appendChild($dom->createElement('IconStyle'));
+        $iconStyle->appendChild($dom->createElement('scale', '1.1'));
+        $iconStyle->appendChild($dom->createElement('Icon'))->appendChild($dom->createElement('href', 'http://maps.google.com/mapfiles/kml/pal2/icon4.png'));
 
-            $baseUrl = url('/') . '/';
-            foreach ($trees as $tree) {
-                $tName = Tree::find($tree->tree_name)->name ?? 'N/A';
-                $sName = ScientificName::find($tree->scientific_name)->scientific_name ?? 'N/A';
-                $fName = Family::find($tree->family)->family_name ?? 'N/A';
+        $baseUrl = url('/').'/';
+        foreach ($trees as $tree) {
+            $tName = Tree::find($tree->tree_name)->name ?? 'N/A';
+            $sName = ScientificName::find($tree->scientific_name)->scientific_name ?? 'N/A';
+            $fName = Family::find($tree->family)->family_name ?? 'N/A';
 
-            $images          = is_string($tree->all_captured_images)
+            $images = is_string($tree->all_captured_images)
                                     ? json_decode($tree->all_captured_images, true)
                                     : ($tree->all_captured_images ?? []);
-            $imagePaths      = is_array($images)
-                                    ? array_map(fn($p) => $baseUrl . ltrim($p, '/'), $images)
+            $imagePaths = is_array($images)
+                                    ? array_map(fn ($p) => $baseUrl.ltrim($p, '/'), $images)
                                     : [];
             $imagePathString = implode(' | ', $imagePaths);
 
             $placemark = $dom->createElement('Placemark');
 
-            $pmName = $dom->createElement('name', $tree->tree_no . ' - ' . $tName);
+            $pmName = $dom->createElement('name', $tree->tree_no.' - '.$tName);
             $placemark->appendChild($pmName);
 
             // ✅ CDATA description for mobile Google Earth
             $imageHtml = '';
-            if (!empty($imagePaths)) {
+            if (! empty($imagePaths)) {
                 foreach ($imagePaths as $index => $imgUrl) {
                     $imageHtml .= '
                 <div style="margin:6px 0;">
-                <a href="' . htmlspecialchars($imgUrl) . '" target="_blank"
+                <a href="'.htmlspecialchars($imgUrl).'" target="_blank"
                     style="display:inline-block;
                             background-color:#2e7d32;
                             color:#ffffff;
@@ -229,7 +229,7 @@ class ProjectExportController extends Controller
                             font-size:13px;
                             font-weight:bold;
                             margin-bottom:4px;">
-                    🌿 View Image ' . ($index + 1) . '
+                    🌿 View Image '.($index + 1).'
                 </a>
                 </div>';
                 }
@@ -254,7 +254,7 @@ class ProjectExportController extends Controller
             }
         }
 
-        return response()->stream(fn() => print($dom->saveXML()), 200, [
+        return response()->stream(fn () => print ($dom->saveXML()), 200, [
             'Content-Type' => 'application/vnd.google-earth.kml+xml',
             'Content-Disposition' => "attachment; filename=Project_{$project_id}_Trees.kml",
         ]);
@@ -276,7 +276,7 @@ class ProjectExportController extends Controller
             return response()->json(['success' => false, 'message' => 'No images found.'], 404);
         }
 
-        $zipFileName = "Tree_Images_project_{$project_id}_" . date('d-m-Y_H-i') . '.zip';
+        $zipFileName = "Tree_Images_project_{$project_id}_".date('d-m-Y_H-i').'.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");
         $zip = new ZipArchive;
 
@@ -286,7 +286,7 @@ class ProjectExportController extends Controller
                 foreach ((array) $images as $imagePath) {
                     $fullPath = public_path($imagePath);
                     if (File::exists($fullPath) && is_file($fullPath)) {
-                        $zip->addFile($fullPath, "Trees/Tree_{$tree->tree_no}_" . basename($imagePath));
+                        $zip->addFile($fullPath, "Trees/Tree_{$tree->tree_no}_".basename($imagePath));
                     }
                 }
             }

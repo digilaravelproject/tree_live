@@ -64,8 +64,7 @@ class LoginController extends Controller
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
-            $user->image_url = $user->profile_image ? asset('storage/' . $user->profile_image) : null;
-
+            
             return $this->success([
                 'access_token' => $token,
                 'token_type' => 'Bearer',
@@ -125,8 +124,6 @@ class LoginController extends Controller
             if ($this->authService->verifyUserOtp($user, $request->otp)) {
                 $isNewUser = ($user->is_verified == 0);
                 $token = $user->createToken('auth_token')->plainTextToken;
-
-                $user->image_url = $user->profile_image ? asset('storage/' . $user->profile_image) : null;
 
                 return $this->success([
                     'access_token' => $token,

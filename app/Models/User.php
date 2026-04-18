@@ -48,7 +48,6 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'otp',
     ];
     /**
      * Check if user is a Customer (Role 3)
@@ -103,5 +102,17 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'model_has_roles', 'model_id', 'role_id');
+    }
+
+    /**
+     * Accessor for profile_image to return full URL (Legacy Support)
+     */
+    public function getProfileImageAttribute($value)
+    {
+        if (!$value) return null;
+        // If it's already a URL, return as is
+        if (filter_var($value, FILTER_VALIDATE_URL)) return $value;
+        // Otherwise prefix with storage path
+        return asset('storage/' . $value);
     }
 }
