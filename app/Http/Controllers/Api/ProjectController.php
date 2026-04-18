@@ -24,17 +24,34 @@ class ProjectController extends Controller
             /** @var \App\Models\User $user */
             $user = Auth::user();
             
-            $projects = Project::where('extra_user', $user->id)
-                ->with(['state', 'fieldOfficer'])
-                ->withCount('trees')
-                ->get();
+            $query = Project::with(['state', 'fieldOfficer'])->withCount('trees');
 
-            return $this->success($projects, 'Projects fetched successfully.');
+            // --- Role based filtering (Same as old logic but cleaner) ---
+            if ($user->role_id == 3) {
+                $query->where('extra_user', $user->id);
+            } elseif ($user->role_id == 2) {
+                // Assuming field_officer_id is stored as JSON or string of comma separated IDs
+                // Old logic used JSON_CONTAINS
+                $query->whereRaw("JSON_CONTAINS(field_officer_id, '\"$user->id\"')");
+            }
+            
+            $projects = $query->get();
+
+            // Fetch active tree price (Merge from old logic)
+            $activePrice = \App\Models\TreePrice::where('is_active', 1)->orderBy('id', 'desc')->first();
+            $priceStr = $activePrice ? number_format((float)$activePrice->price, 2, '.', '') : "0.00";
+
+            return $this->success([
+                'active_tree_price' => $priceStr,
+                'count' => $projects->count(),
+                'data' => $projects
+            ], 'Projects fetched successfully.');
         } catch (Exception $e) {
             Log::error("Project List Error: " . $e->getMessage());
             return $this->error('Failed to fetch projects.', 500);
         }
     }
+
 
     /**
      * Tree Field Requirements per Project/Role

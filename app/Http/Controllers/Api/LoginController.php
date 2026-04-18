@@ -214,23 +214,48 @@ class LoginController extends Controller
     /**
      * Project Assign Officer
      */
+     /**
+     * Project list fetched by mobile app (Merged Logic)
+     */
     public function project_assign_officer(Request $request)
     {
-        $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'field_officer_id' => 'required|array',
+        $validator = Validator::make($request->all(), [
+            'role_id' => 'required',
+            'user_id' => 'required',
         ]);
 
-        try {
-            $project = Project::find($request->project_id);
-            $project->field_officer_id = json_encode($request->field_officer_id);
-            $project->save();
+        if ($validator->fails()) {
+            return $this->error($validator->errors()->first(), 422);
+        }
 
-            return $this->success(null, 'Officers assigned successfully.');
+        try {
+            $user_id = $request->user_id;
+            $role_id = $request->role_id;
+            $projects = collect();
+
+            $query = Project::with(['state', 'fieldOfficer'])->withCount('trees');
+
+            if ($role_id == 3) {
+                $query->where('extra_user', $user_id);
+            } elseif ($role_id == 2) {
+                $query->whereRaw("JSON_CONTAINS(field_officer_id, '\"$user_id\"')");
+            }
+            
+            $projects = $query->get();
+
+            // Fetch active tree price (Old compatibility)
+            $activeTreePrice = \App\Models\TreePrice::where('is_active', 1)->orderBy('id', 'desc')->value('price') ?? 0;
+
+            return $this->success([
+                'active_tree_price' => number_format((float)$activeTreePrice, 2, '.', ''),
+                'count' => $projects->count(),
+                'data' => $projects
+            ], 'Project list fetched successfully.');
         } catch (Exception $e) {
-            return $this->error('Failed to assign officers', 500);
+            return $this->error('Something went wrong: ' . $e->getMessage(), 500);
         }
     }
+
 
     /**
      * User Ratings
