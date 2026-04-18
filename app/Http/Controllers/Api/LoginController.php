@@ -98,10 +98,12 @@ class LoginController extends Controller
             // Register or update user with OTP
             $result = $this->authService->registerOrRetrieveUser($phone, $otp);
 
-            return $this->success([
+            return response()->json([
+                'status' => true,
+                'message' => 'OTP sent successfully.',
                 'user_type' => $result['is_new'] ? 'new' : 'existing',
-                'otp' => config('app.debug') ? $otp : null,
-            ], 'OTP sent successfully.');
+                'otp' => $otp,
+            ]);
         } catch (Exception $e) {
             Log::error('API Send OTP Error: ' . $e->getMessage());
 
@@ -125,13 +127,15 @@ class LoginController extends Controller
                 $isNewUser = ($user->is_verified == 0);
                 $token = $user->createToken('auth_token')->plainTextToken;
 
-                return $this->success([
+                return response()->json([
+                    'status' => true,
+                    'message' => 'OTP Verified Successfully',
                     'access_token' => $token,
                     'token_type' => 'Bearer',
                     'is_new_user' => $isNewUser,
                     'is_verified' => $user->is_verified,
                     'user' => $user,
-                ], 'OTP Verified Successfully');
+                ]);
             }
 
             return $this->error('Invalid OTP', 401);
@@ -202,7 +206,11 @@ class LoginController extends Controller
                 'is_verified' => 1,
             ]);
 
-            return $this->success($user, 'Registration successful', 201);
+            return response()->json([
+                'status' => true,
+                'message' => 'Registration successful',
+                'user' => $user
+            ], 201);
         } catch (Exception $e) {
             return $this->error('Registration failed', 500);
         }
@@ -243,11 +251,13 @@ class LoginController extends Controller
             // Fetch active tree price (Old compatibility)
             $activeTreePrice = \App\Models\TreePrice::where('is_active', 1)->orderBy('id', 'desc')->value('price') ?? 0;
 
-            return $this->success([
+            return response()->json([
+                'status' => true,
+                'message' => 'Project list fetched successfully.',
                 'active_tree_price' => number_format((float)$activeTreePrice, 2, '.', ''),
                 'count' => $projects->count(),
                 'data' => $projects
-            ], 'Project list fetched successfully.');
+            ]);
         } catch (Exception $e) {
             return $this->error('Something went wrong: ' . $e->getMessage(), 500);
         }
