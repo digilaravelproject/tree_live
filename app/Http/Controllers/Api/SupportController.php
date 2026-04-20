@@ -14,9 +14,8 @@ class SupportController extends Controller
     public function faqs()
     {
         return response()->json([
-            'success' => true,
-            'message' => 'FAQ list fetched successfully',
-            'data' => Faq::latest()->get()
+            'status' => true,
+            'faqs' => Faq::latest()->get()
         ]);
     }
 
@@ -28,9 +27,9 @@ class SupportController extends Controller
         $states = State::select('id', 'state_name')
             ->orderBy('state_name')
             ->get();
-            
+
         return response()->json([
-            'success' => true,
+            'status' => true,
             'message' => 'State list fetched successfully',
             'data' => $states
         ]);
