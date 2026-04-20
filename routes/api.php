@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\TreePaymentController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\SubscriptionApiController;
 use App\Http\Controllers\Api\Auth\ForgotPasswordController;
+use App\Http\Controllers\Api\CustomerAuthController;
+use App\Http\Controllers\Api\CustomerProjectTreeController;
+use App\Http\Controllers\Api\CustomerWalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +36,7 @@ Route::post('/user_register', [LoginController::class, 'user_register']);
 // ==========================================
 Route::get('/states', [SupportController::class, 'states']);
 Route::post('/get_tree_requirements', [ProjectController::class, 'requirements']);
+Route::post('/trees-add', [TreeController::class, 'store']); // Create new tree (No Auth Required)
 
 // ==========================================
 // 3. PROTECTED ROUTES (Requires Sanctum Auth)
@@ -69,7 +73,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/trees-add/{id}', [TreeController::class, 'index']);
     Route::post('/tree_in_project', [TreeController::class, 'tree_on_project_id']);
     Route::get('/tree-show/{id}', [TreeController::class, 'show']);
-    Route::post('/trees-add', [TreeController::class, 'store']);
     Route::post('/tree-measure/{id}', [TreeController::class, 'update']);
     Route::delete('/measure-delete/{id}', [TreeController::class, 'destroy']);
 
@@ -105,3 +108,28 @@ Route::get('/export/pdf/{project_id}', [ProjectExportController::class, 'downloa
 Route::get('/export/excel/{project_id}', [ProjectExportController::class, 'downloadExcel'])->name('api.export.excel');
 Route::get('/export/kml/{project_id}', [ProjectExportController::class, 'downloadKml'])->name('api.export.kml');
 Route::get('/export/imgs/{project_id}', [ProjectExportController::class, 'downloadImgsZip'])->name('api.export.imgs');
+
+// ==========================================
+// 6. CUSTOMER ROUTES
+// ==========================================
+Route::group(['prefix' => 'customer'], function () {
+    Route::post('/send-otp', [CustomerAuthController::class, 'sendOtp']);
+    Route::post('/verify-otp', [CustomerAuthController::class, 'verifyOtp']);
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/update-profile', [CustomerAuthController::class, 'updateProfile']);
+        Route::post('/create-project', [CustomerProjectTreeController::class, 'createProject']);
+        
+        // Exact Legacy Routes for Customer Projects
+        Route::get('/projects/{id}', [CustomerProjectTreeController::class, 'getProject']);
+        Route::put('/projects/{id}', [CustomerProjectTreeController::class, 'updateProject']);
+        
+        Route::get('/get-projects', [CustomerProjectTreeController::class, 'getProjects']);
+        Route::post('/add-tree', [CustomerProjectTreeController::class, 'addTree']);
+        Route::get('/get-trees/{project_id}', [CustomerProjectTreeController::class, 'getTrees']);
+        
+        // Wallet/Payments
+        Route::post('/payment/create-order', [CustomerWalletController::class, 'createOrder']);
+        Route::post('/payment/verify', [CustomerWalletController::class, 'verifyPayment']);
+    });
+});
