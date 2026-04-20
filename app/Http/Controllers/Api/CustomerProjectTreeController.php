@@ -35,7 +35,7 @@ class CustomerProjectTreeController extends Controller
         if ($user->role_id == 3) {
             if (!$this->checkProjectLimit($user)) {
                 return response()->json([
-                    'status' => false,
+                    'success' => false,
                     'message' => 'Project limit reached. Please purchase a plan.',
                     'action' => 'redirect_to_payment'
                 ], 403);
@@ -44,7 +44,7 @@ class CustomerProjectTreeController extends Controller
 
         $validator = Validator::make($request->all(), ['project_name' => 'required']);
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
 
         $project = Project::create([
@@ -59,7 +59,7 @@ class CustomerProjectTreeController extends Controller
             'accuracy' => 0
         ]);
 
-        return response()->json(['status' => true, 'message' => 'Project Created', 'data' => $project]);
+        return response()->json(['success' => true, 'message' => 'Project Created', 'data' => $project]);
     }
 
     public function createProject(Request $request)
@@ -261,16 +261,16 @@ class CustomerProjectTreeController extends Controller
             'tree_name' => 'required',
         ]);
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
 
         // Check Ownership
         $project = Project::where('id', $request->project_id)->where('extra_user', $user->id)->first();
-        if (!$project) return response()->json(['status' => false, 'message' => 'Access Denied'], 403);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Access Denied'], 403);
 
         // Check Tree Limit
         if (MtTree::where('project_id', $project->id)->count() >= $project->limit) {
-            return response()->json(['status' => false, 'message' => 'Tree limit reached for this project'], 403);
+            return response()->json(['success' => false, 'message' => 'Tree limit reached for this project'], 403);
         }
 
         $tree = MtTree::create([
@@ -283,14 +283,14 @@ class CustomerProjectTreeController extends Controller
             'ward_plot_no' => 0
         ]);
 
-        return response()->json(['status' => true, 'message' => 'Tree Added', 'data' => $tree]);
+        return response()->json(['success' => true, 'message' => 'Tree Added', 'data' => $tree]);
     }
 
     // Get Projects
     public function getProjects()
     {
         $projects = Project::where('extra_user', auth()->id())->orderBy('created_at', 'desc')->get();
-        return response()->json(['status' => true, 'data' => $projects]);
+        return response()->json(['success' => true, 'data' => $projects]);
     }
 
     // Get Trees
@@ -299,13 +299,13 @@ class CustomerProjectTreeController extends Controller
         $user = auth()->user();
         $project = Project::where('id', $project_id)->where('extra_user', $user->id)->first();
 
-        if (!$project) return response()->json(['status' => false, 'message' => 'Access Denied'], 403);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Access Denied'], 403);
 
         $trees = MtTree::where('project_id', $project_id)
             ->where('extra_usertree', $user->id)
             ->orderBy('tree_no', 'desc')
             ->get();
 
-        return response()->json(['status' => true, 'data' => $trees]);
+        return response()->json(['success' => true, 'data' => $trees]);
     }
 }

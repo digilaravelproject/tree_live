@@ -51,7 +51,7 @@ class TreeController extends Controller
 
                 if ($validator->fails()) {
                     return response()->json([
-                        'status' => false, 
+                        'success' => false, 
                         'message' => $validator->errors()->first(),
                         'errors' => $validator->errors()
                     ], 422);
@@ -104,7 +104,7 @@ class TreeController extends Controller
             }
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Tree record(s) created successfully',
                 'count' => count($createdTrees),
                 'data' => $createdTrees
@@ -113,7 +113,7 @@ class TreeController extends Controller
         } catch (Exception $e) {
             Log::error("Tree Store Error: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Failed to save tree records: ' . $e->getMessage()
             ], 500);
         }
@@ -163,7 +163,7 @@ class TreeController extends Controller
     {
         try {
             $tree = MtTree::find($id);
-            if (!$tree) return response()->json(['status' => false, 'message' => 'Tree not found'], 404);
+            if (!$tree) return response()->json(['success' => false, 'message' => 'Tree not found'], 404);
 
             $data = $request->all();
             
@@ -183,14 +183,14 @@ class TreeController extends Controller
             $tree->update($data);
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Tree record updated successfully',
                 'data' => $tree->fresh()
             ]);
         } catch (Exception $e) {
             Log::error("Tree Update Error: " . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Failed to update tree: ' . $e->getMessage()
             ], 500);
         }
@@ -203,14 +203,14 @@ class TreeController extends Controller
     {
         try {
             $tree = MtTree::find($id);
-            if (!$tree) return response()->json(['status' => false, 'message' => 'Tree not found'], 404);
+            if (!$tree) return response()->json(['success' => false, 'message' => 'Tree not found'], 404);
 
             $tree->delete();
-            return response()->json(['status' => true, 'message' => 'Tree deleted successfully']);
+            return response()->json(['success' => true, 'message' => 'Tree deleted successfully']);
         } catch (Exception $e) {
             Log::error("Tree Delete Error: " . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Failed to delete tree: ' . $e->getMessage()
             ], 500);
         }
@@ -228,7 +228,7 @@ class TreeController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
             }
 
             $user = User::find($request->user_id);
@@ -266,11 +266,11 @@ class TreeController extends Controller
                     return $tree;
                 });
 
-            return response()->json(['status' => true, 'data' => $trees]);
+            return response()->json(['success' => true, 'data' => $trees]);
         } catch (Exception $e) {
             Log::error("Tree Fetch Error: " . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Something went wrong while fetching trees: ' . $e->getMessage()
             ], 500);
         }
@@ -283,7 +283,7 @@ class TreeController extends Controller
     {
         try {
             $tree = MtTree::find($id);
-            if (!$tree) return response()->json(['status' => false, 'message' => 'Tree not found'], 404);
+            if (!$tree) return response()->json(['success' => false, 'message' => 'Tree not found'], 404);
 
             $tree->all_captured_images = (array)($tree->all_captured_images ?? []);
             
@@ -291,10 +291,10 @@ class TreeController extends Controller
             $tree->scientific_name_label = ScientificName::where('id', $tree->scientific_name)->value('scientific_name') ?? $tree->scientific_name;
             $tree->family_label = Family::where('id', $tree->family)->value('family_name') ?? $tree->family;
 
-            return response()->json(['status' => true, 'data' => $tree]);
+            return response()->json(['success' => true, 'data' => $tree]);
         } catch (Exception $e) {
             Log::error("Tree Detail Error: " . $e->getMessage());
-            return response()->json(['status' => false, 'message' => 'Failed to fetch tree details.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to fetch tree details.'], 500);
         }
     }
 
@@ -310,7 +310,7 @@ class TreeController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
             }
 
             $user_id = $request->user_id;
@@ -322,7 +322,7 @@ class TreeController extends Controller
                 $projectIds = Project::whereRaw("JSON_CONTAINS(field_officer_id, '\"$user_id\"')")->pluck('id');
             } else {
                 return response()->json([
-                    'status' => true,
+                    'success' => true,
                     'data' => [
                         'project_count' => Project::count(),
                         'tree_count' => MtTree::count(),
@@ -332,7 +332,7 @@ class TreeController extends Controller
             }
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'data' => [
                     'project_count' => $projectIds->count(),
                     'tree_count' => MtTree::whereIn('project_id', $projectIds)->count(),
@@ -341,7 +341,7 @@ class TreeController extends Controller
             ]);
         } catch (Exception $e) {
             Log::error("Dashboard Count Error: " . $e->getMessage());
-            return response()->json(['status' => false, 'message' => 'Failed to load dashboard statistics.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to load dashboard statistics.'], 500);
         }
     }
 

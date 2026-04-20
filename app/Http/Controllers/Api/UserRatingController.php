@@ -23,14 +23,14 @@ class UserRatingController extends Controller
             );
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Rating updated successfully',
                 'data' => $rating
             ]);
         } catch (Exception $e) {
             Log::error('Rating Submission Error: ' . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Failed to submit rating.'
             ], 500);
         }

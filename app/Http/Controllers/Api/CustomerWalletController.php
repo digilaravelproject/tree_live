@@ -27,12 +27,12 @@ class CustomerWalletController extends Controller
         try {
             $razorpayOrder = $api->order->create($orderData);
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'order_id' => $razorpayOrder['id'],
                 'key' => $this->key_id
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
@@ -60,9 +60,9 @@ class CustomerWalletController extends Controller
                 'status' => 'success'
             ]);
 
-            return response()->json(['status' => true, 'message' => 'Wallet Updated']);
+            return response()->json(['success' => true, 'message' => 'Wallet Updated']);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Verification Failed']);
+            return response()->json(['success' => false, 'message' => 'Verification Failed']);
         }
     }
 }

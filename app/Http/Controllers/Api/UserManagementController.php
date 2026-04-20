@@ -22,15 +22,12 @@ class UserManagementController extends Controller
         $user = User::with(['district', 'roles'])->find($id);
 
         if (!$user) {
-            return response()->json(['status' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
         // profile_image URL is now handled by User model toArray()
 
-        return response()->json([
-            'status' => true,
-            'data' => $user
-        ]);
+        return response()->json($user);
     }
 
     /**
@@ -62,14 +59,10 @@ class UserManagementController extends Controller
             $user->is_verified = 1;
             $user->save();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Profile updated successfully.',
-                'data' => $user
-            ]);
+            return response()->json($user);
         } catch (Exception $e) {
             Log::error("Profile Update Error: " . $e->getMessage());
-            return response()->json(['status' => false, 'message' => 'Update failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Update failed.'], 500);
         }
     }
 }

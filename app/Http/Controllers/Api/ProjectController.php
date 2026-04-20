@@ -38,7 +38,7 @@ class ProjectController extends Controller
             $priceStr = $activePrice ? number_format((float)$activePrice->price, 2, '.', '') : "0.00";
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'active_tree_price' => $priceStr,
                 'count' => $projects->count(),
                 'data' => $projects
@@ -46,7 +46,7 @@ class ProjectController extends Controller
         } catch (Exception $e) {
             Log::error("Project List Error: " . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Failed to fetch projects.'
             ], 500);
         }
@@ -64,7 +64,7 @@ class ProjectController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
 
         try {
@@ -111,12 +111,12 @@ class ProjectController extends Controller
             }
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'ward_no' => $project->ward_no ?? "",
                 'requirements' => $requirements
             ]);
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Failed to fetch requirements.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to fetch requirements.'], 500);
         }
     }
 }

@@ -30,7 +30,7 @@ class CustomerAuthController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => $validator->errors()->first(),
             ], 422);
         }
@@ -53,14 +53,14 @@ class CustomerAuthController extends Controller
             );
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'OTP sent successfully',
                 'action' => 'redirect_to_verify',
                 'otp' => config('app.debug') ? $otp : null, // Only for debug
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Something went wrong while sending OTP.',
             ], 500);
         }
@@ -77,13 +77,13 @@ class CustomerAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
 
         $user = User::where('phone', $request->phone)->first();
 
         if (! $user) {
-            return response()->json(['status' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
         if ($user->otp === $request->otp) {
@@ -94,14 +94,14 @@ class CustomerAuthController extends Controller
             $token = $user->createToken('CustomerApp')->plainTextToken;
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Login successful',
                 'token' => $token,
                 'action' => (empty($user->name) || empty($user->email)) ? 'redirect_to_profile_update' : 'redirect_to_dashboard',
             ]);
         }
 
-        return response()->json(['status' => false, 'message' => 'Invalid OTP'], 401);
+        return response()->json(['success' => false, 'message' => 'Invalid OTP'], 401);
     }
 
     /**
@@ -113,7 +113,7 @@ class CustomerAuthController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['status' => false, 'message' => 'Unauthenticated'], 401);
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
         }
 
         $validator = Validator::make($request->all(), [
@@ -123,7 +123,7 @@ class CustomerAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
 
         $user->update([
@@ -133,7 +133,7 @@ class CustomerAuthController extends Controller
         ]);
 
         return response()->json([
-            'status' => true,
+            'success' => true,
             'message' => 'Profile Updated',
             'action' => 'redirect_to_dashboard',
         ]);

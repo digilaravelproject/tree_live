@@ -21,7 +21,7 @@ class RazorpayApiController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()], 400);
+            return response()->json(['success' => false, 'message' => $validator->errors()], 400);
         }
 
         $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
@@ -45,7 +45,7 @@ class RazorpayApiController extends Controller
                 'key'      => env('RAZORPAY_KEY') // Frontend ke liye key
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -62,7 +62,7 @@ class RazorpayApiController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()], 400);
+            return response()->json(['success' => false, 'message' => $validator->errors()], 400);
         }
 
         $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));

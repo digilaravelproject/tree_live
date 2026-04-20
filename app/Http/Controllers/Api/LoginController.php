@@ -99,7 +99,7 @@ class LoginController extends Controller
             $result = $this->authService->registerOrRetrieveUser($phone, $otp);
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'OTP sent successfully.',
                 'user_type' => $result['is_new'] ? 'new' : 'existing',
                 'otp' => $otp,
@@ -128,7 +128,7 @@ class LoginController extends Controller
                 $token = $user->createToken('auth_token')->plainTextToken;
 
                 return response()->json([
-                    'status' => true,
+                    'success' => true,
                     'message' => 'OTP Verified Successfully',
                     'access_token' => $token,
                     'token_type' => 'Bearer',
@@ -170,7 +170,7 @@ class LoginController extends Controller
      */
     public function user(Request $request)
     {
-        return $this->success($request->user());
+        return response()->json($request->user());
     }
 
     /**
@@ -207,7 +207,7 @@ class LoginController extends Controller
             ]);
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Registration successful',
                 'user' => $user
             ], 201);
@@ -252,7 +252,7 @@ class LoginController extends Controller
             $activeTreePrice = \App\Models\TreePrice::where('is_active', 1)->orderBy('id', 'desc')->value('price') ?? 0;
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'message' => 'Project list fetched successfully.',
                 'active_tree_price' => number_format((float)$activeTreePrice, 2, '.', ''),
                 'count' => $projects->count(),
