@@ -103,7 +103,15 @@ class User extends Authenticatable
         $array = parent::toArray();
         if (isset($array['profile_image']) && $array['profile_image']) {
             if (!filter_var($array['profile_image'], FILTER_VALIDATE_URL)) {
-                $array['profile_image'] = asset('storage/' . $array['profile_image']);
+                // Use asset() with the path stored in DB
+                $fullUrl = asset('storage/' . $array['profile_image']);
+
+                // Detect if /public/ prefix is needed for shared hosting
+                if (str_contains(request()->getRequestUri(), '/public/') && !str_contains($fullUrl, '/public/storage/')) {
+                    $fullUrl = str_replace('/storage/', '/public/storage/', $fullUrl);
+                }
+
+                $array['profile_image'] = $fullUrl;
             }
         }
         return $array;
