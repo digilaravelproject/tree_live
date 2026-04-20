@@ -245,18 +245,24 @@ class TreeController extends Controller
                 ->latest()
                 ->get()
                 ->map(function ($tree) use ($freeTreeIds, $paidTreeIds, $user) {
-                    // Normalize images (safe if cast exists)
-                    $tree->all_captured_images = (array)($tree->all_captured_images ?? []);
+                    // Fix double encoded images if they exist
+                    $captured = $tree->all_captured_images;
+                    if (is_array($captured) && count($captured) == 1 && is_string($captured[0]) && str_starts_with($captured[0], '[')) {
+                        $captured = json_decode($captured[0], true);
+                    }
+                    $tree->all_captured_images = (array)$captured;
 
                     $tree->tree_image_upload = ""; // Privacy/Optimization
 
-                    // Load Name Labels
-                    $tree->tree_name_label = Tree::where('id', $tree->tree_name)->value('name') ?? $tree->tree_name;
-                    $tree->scientific_name_label = ScientificName::where('id', $tree->scientific_name)->value('scientific_name') ?? $tree->scientific_name;
-                    $tree->family_label = Family::where('id', $tree->family)->value('family_name') ?? $tree->family;
+                    // In old format, the fields directly contained the Labels, not IDs
+                    $tree->tree_name = Tree::where('id', $tree->tree_name)->value('name') ?? $tree->tree_name;
+                    $tree->scientific_name = ScientificName::where('id', $tree->scientific_name)->value('scientific_name') ?? $tree->scientific_name;
+                    $tree->family = Family::where('id', $tree->family)->value('family_name') ?? $tree->family;
 
                     if ($user->role_id != 3) {
                         $tree->is_accessible = true;
+                        $tree->is_free = true;
+                        $tree->is_paid = false;
                     } else {
                         $tree->is_free = in_array($tree->id, (array)$freeTreeIds);
                         $tree->is_paid = in_array($tree->id, $paidTreeIds);
@@ -266,10 +272,19 @@ class TreeController extends Controller
                     return $tree;
                 });
 
+            // Calculate Summary as per old format
+            $summary = [
+                'total_trees' => $trees->count(),
+                'free_trees' => $trees->where('is_free', true)->count(),
+                'paid_trees' => $trees->where('is_paid', true)->count(),
+                'accessible_trees' => $trees->where('is_accessible', true)->count(),
+                'locked_trees' => $trees->where('is_accessible', false)->count(),
+            ];
+
             return response()->json([
                 'status' => true,
-                'message' => 'Tree list fetched successfully',
-                'data' => $trees
+                'data' => $trees,
+                'summary' => $summary
             ]);
         } catch (Exception $e) {
             Log::error("Tree Fetch Error: " . $e->getMessage());
