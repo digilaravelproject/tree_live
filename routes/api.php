@@ -25,7 +25,7 @@ use App\Http\Controllers\Api\CustomerWalletController;
 // ==========================================
 // 1. PUBLIC AUTH & ONBOARDING
 // ==========================================
-Route::post('/login', [LoginController::class, 'extra_login'])->name('login');
+Route::post('/login', [LoginController::class, 'extra_login']);
 Route::post('/send-login-otp', [LoginController::class, 'send_otp']);
 Route::post('/send-register-otp', [LoginController::class, 'register_otp']);
 Route::post('/verify-otp', [LoginController::class, 'verifyOtp']);
