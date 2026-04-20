@@ -228,7 +228,7 @@ class TreeController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
             }
 
             $user = User::find($request->user_id);
@@ -266,11 +266,15 @@ class TreeController extends Controller
                     return $tree;
                 });
 
-            return response()->json(['success' => true, 'data' => $trees]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Tree list fetched successfully',
+                'data' => $trees
+            ]);
         } catch (Exception $e) {
             Log::error("Tree Fetch Error: " . $e->getMessage());
             return response()->json([
-                'success' => false,
+                'status' => false,
                 'message' => 'Something went wrong while fetching trees: ' . $e->getMessage()
             ], 500);
         }
@@ -310,7 +314,7 @@ class TreeController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
             }
 
             $user_id = $request->user_id;
@@ -322,7 +326,7 @@ class TreeController extends Controller
                 $projectIds = Project::whereRaw("JSON_CONTAINS(field_officer_id, '\"$user_id\"')")->pluck('id');
             } else {
                 return response()->json([
-                    'success' => true,
+                    'status' => true,
                     'data' => [
                         'project_count' => Project::count(),
                         'tree_count' => MtTree::count(),
@@ -332,7 +336,7 @@ class TreeController extends Controller
             }
 
             return response()->json([
-                'success' => true,
+                'status' => true,
                 'data' => [
                     'project_count' => $projectIds->count(),
                     'tree_count' => MtTree::whereIn('project_id', $projectIds)->count(),
@@ -341,7 +345,7 @@ class TreeController extends Controller
             ]);
         } catch (Exception $e) {
             Log::error("Dashboard Count Error: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to load dashboard statistics.'], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to load dashboard statistics.'], 500);
         }
     }
 

@@ -21,7 +21,7 @@ class WorkController extends Controller
 
         // Return as JSON
         return response()->json([
-            'success' => true,
+            'status' => true,
             'videos' => $videos->map(function ($video) {
                 return [
                     'id' => $video->id,
