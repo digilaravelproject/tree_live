@@ -72,13 +72,11 @@ class OtpService
             // SMS OTP URL
             if (empty($templateUpper) || $templateUpper === 'AUTOGEN') {
                 // Scenario A: Default Transactional SMS
-                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}/AUTOGEN";
+                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}";
             } else {
-                // Scenario B: Custom DLT Template - Using Transactional SMS Route to avoid Voice Fallback
-                // Formulate the message precisely as approved in DLT
-                $msg = "{$otp} is your OTP for Basilenv login. It is valid for 5 minutes. Do not share this OTP with anyone. - Basilenv";
-                $url = "https://2factor.in/API/V1/{$apiKey}/ADDON_SERVICES/SEND_TSMS";
-                $url .= "?From=BSLENV&To={$phone}&Msg=" . urlencode($msg);
+                // Scenario B: Custom DLT Template
+                // Manual Generation format: API_KEY/SMS/PHONE/OTP/TEMPLATE
+                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}/" . urlencode($template);
             }
         }
         
