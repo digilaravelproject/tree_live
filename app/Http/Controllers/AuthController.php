@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use App\Models\User;
+use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use App\Models\Setting;
-use App\Services\OtpService;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
@@ -32,7 +31,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors(['email' => 'User not found']);
         }
 
@@ -41,22 +40,22 @@ class AuthController extends Controller
         }
 
         // Check password first
-        if (!Hash::check($credentials['password'], $user->password)) {
+        if (! Hash::check($credentials['password'], $user->password)) {
             return back()->withErrors(['email' => 'Invalid email or password']);
         }
 
         // Check if Global OTP is enabled
         $otpEnabled = Setting::get('global_otp_login_enabled', '0') === '1';
 
-        if ($otpEnabled) {
+        // Skip OTP for Admin and Super Admin (role_id 1 and 2)
+        $isAdmin = in_array($user->role_id, [1, 2]);
+
+        if ($otpEnabled && ! $isAdmin) {
             // Generate OTP
             $otp = rand(100000, 999999);
 
             // For now, if phone is missing, we might need a fallback or error
             if (empty($user->phone)) {
-                // Fallback: log them in normally or error out?
-                // Admin might expect all staff to have phones if OTP is enabled.
-                // return back()->withErrors(['email' => 'Phone number not found for this account. Please contact admin.']);
 
                 // Let's proceed with normal login if phone is missing to avoid lockout, but log it.
                 Log::warning("OTP enabled but user {$user->email} has no phone number.");
@@ -86,9 +85,10 @@ class AuthController extends Controller
      */
     public function showOtpVerify()
     {
-        if (!Session::has('otp_login_user_id')) {
+        if (! Session::has('otp_login_user_id')) {
             return redirect()->route('login');
         }
+
         return view('auth.otp-verify');
     }
 
@@ -98,10 +98,10 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'otp' => 'required|numeric'
+            'otp' => 'required|numeric',
         ]);
 
-        if (!Session::has('otp_login_user_id')) {
+        if (! Session::has('otp_login_user_id')) {
             return redirect()->route('login');
         }
 
@@ -133,12 +133,12 @@ class AuthController extends Controller
      */
     public function resendOtp()
     {
-        if (!Session::has('otp_login_user_id')) {
+        if (! Session::has('otp_login_user_id')) {
             return response()->json(['status' => 'error', 'message' => 'Session expired.'], 403);
         }
 
         $user = User::find(Session::get('otp_login_user_id'));
-        if (!$user || empty($user->phone)) {
+        if (! $user || empty($user->phone)) {
             return response()->json(['status' => 'error', 'message' => 'User or phone not found.'], 404);
         }
 
@@ -154,6 +154,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
+
         return redirect()->route('login');
     }
 }
