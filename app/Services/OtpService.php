@@ -63,26 +63,28 @@ class OtpService
         $templateUpper = strtoupper(trim($template ?? ''));
         $methodUpper = strtoupper(trim($method ?? 'SMS'));
 
-        /**
-         * 2FACTOR METHOD SELECTION:
-         * 1. VOICE: Explicitly triggers a voice call with the OTP.
-         * 2. SMS: Standard SMS delivery.
-         */
+        Log::info("OtpService: Sending via 2Factor. Method: $methodUpper, Template: $templateUpper");
+
         if ($methodUpper === 'VOICE') {
             // Voice OTP URL
             $url = "https://2factor.in/API/V1/{$apiKey}/VOICE/{$phone}/{$otp}";
         } else {
             // SMS OTP URL
             if (empty($templateUpper) || $templateUpper === 'AUTOGEN') {
-                // Scenario A: Default Transactional SMS (uses system $otp)
-                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}";
+                // Scenario A: Default Transactional SMS
+                $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}/AUTOGEN";
             } else {
-                // Scenario B: Custom DLT Template (Scenario B)
+                // Scenario B: Custom DLT Template
+                // Manual Generation format: API_KEY/SMS/PHONE/OTP/TEMPLATE
                 $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/{$otp}/{$template}";
             }
         }
         
+        Log::info("OtpService: 2Factor URL: $url");
+
         $response = Http::get($url);
+
+        Log::info("OtpService: 2Factor Response: " . $response->body());
 
         if ($response->successful()) {
             return [

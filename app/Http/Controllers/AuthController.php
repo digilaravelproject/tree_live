@@ -51,8 +51,8 @@ class AuthController extends Controller
         $isAdmin = in_array($user->role_id, [1, 2]);
 
         if ($otpEnabled && ! $isAdmin) {
-            // Generate OTP
-            $otp = rand(100000, 999999);
+            // Generate 4-digit OTP to match DLT template (XXXX)
+            $otp = rand(1000, 9999);
 
             // For now, if phone is missing, we might need a fallback or error
             if (empty($user->phone)) {
