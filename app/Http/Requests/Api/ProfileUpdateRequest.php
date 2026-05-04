@@ -19,6 +19,7 @@ class ProfileUpdateRequest extends FormRequest
             'name' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
             'email' => 'required|email|unique:users,email,' . $this->user_id,
+            'phone' => 'nullable|numeric|digits:10|unique:users,phone,' . $this->user_id,
             'gender' => 'nullable|string|max:20',
             'aadhaar_number' => 'nullable|string|max:20',
         ];

@@ -40,7 +40,7 @@ class UserManagementController extends Controller
             $user = User::findOrFail($request->user_id);
 
             // Update allowed fields
-            $user->fill($request->only(['name', 'address', 'email', 'gender', 'aadhaar_number']));
+            $user->fill($request->only(['name', 'address', 'email', 'phone', 'gender', 'aadhaar_number']));
 
             // Handle Profile Image
             if ($request->hasFile('profile_image')) {
