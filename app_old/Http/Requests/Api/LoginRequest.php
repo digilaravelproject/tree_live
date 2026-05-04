@@ -4,7 +4,7 @@ namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class OtpRequest extends FormRequest
+class LoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,7 +15,7 @@ class OtpRequest extends FormRequest
     {
         return [
             'email' => 'required|email',
-            'otp' => 'sometimes|required',
+            'password' => 'required|string',
         ];
     }
 }

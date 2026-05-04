@@ -16,8 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
@@ -85,25 +83,26 @@ class LoginController extends Controller
     public function send_otp(OtpRequest $request)
     {
         try {
-            $email = $request->email;
+            $phone = $request->phone;
             $otp = (string) rand(1000, 9999);
 
             // Verify if existing staff is trying to login via OTP (usually not allowed if they are role 2)
-            $userCheck = User::where('email', $email)->first();
+            $userCheck = User::where('phone', $phone)->first();
             if ($userCheck && $userCheck->role_id == 2 && $userCheck->status != 1) {
                 return $this->error('Your account is blocked.', 403);
             }
 
-            // Send OTP via email using ResetPasswordMail
-            Mail::to($email)->send(new ResetPasswordMail($otp));
+            // Send actual OTP (Mocked if debug)
+            $this->otpService->sendOtp($phone, $otp);
 
-            // Register or update user with OTP (using email)
-            $result = $this->authService->registerOrRetrieveUser($email, $otp, 'email');
+            // Register or update user with OTP
+            $result = $this->authService->registerOrRetrieveUser($phone, $otp);
 
             return response()->json([
                 'success' => true,
-                'message' => 'OTP sent successfully to email.',
+                'message' => 'OTP sent successfully.',
                 'user_type' => $result['is_new'] ? 'new' : 'existing',
+                'otp' => $otp,
             ]);
         } catch (Exception $e) {
             Log::error('API Send OTP Error: ' . $e->getMessage());
@@ -118,13 +117,13 @@ class LoginController extends Controller
     public function verifyOtp(OtpRequest $request)
     {
         try {
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('phone', $request->phone)->first();
 
             if (! $user) {
                 return $this->error('User not found', 404);
             }
 
-            if ($this->authService->verifyUserOtp($user, $request->otp, 'email')) {
+            if ($this->authService->verifyUserOtp($user, $request->otp)) {
                 $isNewUser = ($user->is_verified == 0);
                 $token = $user->createToken('auth_token')->plainTextToken;
 

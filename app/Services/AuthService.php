@@ -12,24 +12,44 @@ class AuthService
     /**
      * Register a new user or return existing one.
      */
-    public function registerOrRetrieveUser(string $phone, string $otp): array
+    public function registerOrRetrieveUser(string $identifier, string $otp, string $channel = 'phone'): array
     {
-        $user = User::where('phone', $phone)->first();
         $isNew = false;
 
-        if (!$user) {
-            $user = User::create([
-                'name' => 'User ' . $phone,
-                'email' => $phone . '@mobile.temp',
-                'phone' => $phone,
-                'password' => Hash::make(Str::random(16)),
-                'role_id' => 3,
-                'is_verified' => 0,
-                'otp' => $otp
-            ]);
-            $isNew = true;
+        if ($channel === 'email') {
+            $user = User::where('email', $identifier)->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => 'User ' . $identifier,
+                    'email' => $identifier,
+                    'phone' => null,
+                    'password' => Hash::make(Str::random(16)),
+                    'role_id' => 3,
+                    'is_verified' => 0,
+                    'otp' => $otp
+                ]);
+                $isNew = true;
+            } else {
+                $user->update(['otp' => $otp]);
+            }
         } else {
-            $user->update(['otp' => $otp]);
+            $user = User::where('phone', $identifier)->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => 'User ' . $identifier,
+                    'email' => $identifier . '@mobile.temp',
+                    'phone' => $identifier,
+                    'password' => Hash::make(Str::random(16)),
+                    'role_id' => 3,
+                    'is_verified' => 0,
+                    'otp' => $otp
+                ]);
+                $isNew = true;
+            } else {
+                $user->update(['otp' => $otp]);
+            }
         }
 
         return ['user' => $user, 'is_new' => $isNew];
@@ -38,10 +58,11 @@ class AuthService
     /**
      * Verify User OTP
      */
-    public function verifyUserOtp(User $user, string $otp): bool
+    public function verifyUserOtp(User $user, string $otp, string $channel = 'phone'): bool
     {
         if ($user->otp === $otp) {
             $user->otp = null;
+            $user->is_verified = 1;
             $user->save();
             return true;
         }
