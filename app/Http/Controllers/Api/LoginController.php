@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ResetPasswordMail;
+use App\Mail\VerifyOtpMail;
 use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
@@ -94,8 +94,8 @@ class LoginController extends Controller
                 return $this->error('Your account is blocked.', 403);
             }
 
-            // Send OTP via email using ResetPasswordMail
-            Mail::to($email)->send(new ResetPasswordMail($otp));
+            // Send OTP via email using VerifyOtpMail
+            Mail::to($email)->send(new VerifyOtpMail($otp));
 
             // Register or update user with OTP (using email)
             $result = $this->authService->registerOrRetrieveUser($email, $otp, 'email');
