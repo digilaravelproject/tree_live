@@ -62,7 +62,6 @@ class AuthService
     {
         if ($user->otp === $otp) {
             $user->otp = null;
-            $user->is_verified = 1;
             $user->save();
             return true;
         }
